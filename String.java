@@ -1,1 +1,3 @@
+this line is updated in master branch
+
 this is the second file in git demo ...  
