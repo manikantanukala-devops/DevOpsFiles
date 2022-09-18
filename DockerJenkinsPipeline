@@ -1,0 +1,57 @@
+pipeline{
+    agent{
+        label "docker-slave-1"
+    }
+    tools {
+        maven "maven3.8.6"
+    }
+    options {
+        buildDiscarder logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '5', daysToKeepStr: '', numToKeepStr: '5')
+        timestamps()
+     }
+    triggers {
+      pollSCM '* * * * *'
+    }
+    
+    
+    
+     stages{
+         stage("getting github code"){
+             steps{
+                 git credentialsId: 'b53081d4-08d1-4fdf-b6a3-2c3449a8e897', url: 'https://github.com/manikantanukala-devops/java-web-app-docker.git'
+             }
+         }
+     
+     stage("maven build package"){
+         steps{
+             sh "mvn clean package"
+         }
+     }
+     stage("docker image build"){
+         steps{
+             sh "docker build -t manikantanukala/java-webapp:${env.BUILD_NUMBER} ."
+         }
+     }
+     stage("docker login to registry"){
+         steps{
+             withCredentials([string(credentialsId: 'dock_passwd', variable: 'Dock_Pass')]) {
+              sh "docker login -u manikantanukala -p $Dock_Pass "
+          }
+            
+         }
+     }
+     stage("pushing to registry"){
+         steps{
+             sh "docker push manikantanukala/java-webapp:${env.BUILD_NUMBER}"
+         }
+     }
+      stage("running the container from image in slave 2"){  
+           steps{
+              node('slave-2') {
+          sh "docker rm -f javawebcontainer || true "
+          sh "docker run -d --name javawebcontainer -p 8080:8080 manikantanukala/java-webapp:${env.BUILD_NUMBER}"
+           }
+           }
+    }
+}
+}
