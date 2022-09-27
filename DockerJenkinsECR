@@ -1,0 +1,44 @@
+pipeline{
+    agent{
+        label "agent-1"
+    }
+
+    stages{
+        stage("git code"){
+            steps{
+                git 'https://github.com/manikantanukala-devops/maven-web-application.git'
+            }
+        }
+    
+        stage("docker build"){
+            steps{
+                sh "docker build -t 225741130398.dkr.ecr.ap-south-1.amazonaws.com/maven-web-application:${env.BUILD_NUMBER} ."
+            }
+        }
+        stage("login to EcrRegistry"){
+            steps{
+              sh "aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin 225741130398.dkr.ecr.ap-south-1.amazonaws.com"  
+            }
+        }
+       stage("pushing to Ecr"){
+        steps{
+            sh "docker push 225741130398.dkr.ecr.ap-south-1.amazonaws.com/maven-web-application:${env.BUILD_NUMBER}"
+        }
+    }
+    
+    stage("creating container by pulling image from ecr registry"){
+        steps{
+            node('agent-2') {
+           sh "aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin 225741130398.dkr.ecr.ap-south-1.amazonaws.com"
+           sh "docker run -d --name mavenapp -p 9980:8080 225741130398.dkr.ecr.ap-south-1.amazonaws.com/maven-web-application:${env.BUILD_NUMBER}"
+                
+            }
+        }
+    }
+    
+    
+    
+    
+    
+    }    
+}
