@@ -32,7 +32,7 @@ pipeline {
     
             }
         }
-        stage("docker push to ecr public"){
+        stage("docker push to ECR aws"){
             steps{
                 sh "docker push 225741130398.dkr.ecr.ap-south-1.amazonaws.com/spring-mongo-app:${env.BUILD_NUMBER}"
             }
