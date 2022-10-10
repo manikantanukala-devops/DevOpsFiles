@@ -1,0 +1,61 @@
+pipeline {
+    
+    agent any
+    
+    /*tools {
+        maven "maven3.8.6"
+    }*/
+    
+    stages {
+        stage("github code"){
+            steps{
+                git 'https://github.com/manikantanukala-devops/spring-boot-mongo-docker.git'
+            }
+        }
+        
+       /* stage("maven package"){
+            steps{
+                sh "mvn clean package"
+            }
+        }
+        */
+        
+        stage("docker build"){
+            steps{
+                sh "docker build -t 225741130398.dkr.ecr.ap-south-1.amazonaws.com/spring-mongo-app:${BUILD_NUMBER} ."
+                
+            }
+        }
+        stage("docker login"){
+            steps{
+                sh "aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin 225741130398.dkr.ecr.ap-south-1.amazonaws.com "
+    
+            }
+        }
+        stage("docker push to ecr public"){
+            steps{
+                sh "docker push 225741130398.dkr.ecr.ap-south-1.amazonaws.com/spring-mongo-app:${env.BUILD_NUMBER}"
+            }
+        }    
+        stage("changing the image tag in Compose file"){
+            steps{
+                sh ''' sed -i "s/IMAGE-TAG/${BUILD_NUMBER}/g"  docker-compose.yml '''
+            }
+        }
+        stage("copying docker file to master swarm"){
+            steps{
+            sshagent(['slaveID']) {
+             sh "scp -o  StrictHostKeyChecking=no docker-compose.yml ubuntu@172.31.47.116:/home/ubuntu/docker-compose.yml"
+             sh "ssh -o  StrictHostKeyChecking=no ubuntu@172.31.47.116 aws ecr get-login-password --region ap-south-1 | ssh -o  StrictHostKeyChecking=no ubuntu@172.31.47.116 docker login --username AWS --password-stdin 225741130398.dkr.ecr.ap-south-1.amazonaws.com"
+             sh "ssh -o  StrictHostKeyChecking=no  ubuntu@172.31.47.116 docker stack deploy --compose-file docker-compose.yml --with-registry-auth StackDockerswarm"
+                
+            }
+            }
+        }
+    
+    
+    
+    
+    
+    }
+}
