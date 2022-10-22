@@ -1,1 +1,3 @@
-this file contains deployment script
+echo "Updated code as per standards"
+
+ file contains deployment script
