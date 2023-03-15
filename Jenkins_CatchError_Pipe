@@ -1,0 +1,21 @@
+pipeline{
+    agent any
+    
+    stages{
+        stage("first"){
+         steps{
+      catchError(message:"Even if this satge fails we will continue",buildResult: 'SUCCESS', stageResult: 'FAILURE'){
+             sh "exit 1"   
+            }
+        }
+            
+        }
+       stage("second"){
+            steps{
+                
+                echo "this is  second stage"
+            }
+        }
+        
+    }
+}
